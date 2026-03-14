@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 
 import zmq.asyncio
 
@@ -14,7 +15,7 @@ from capstone_motor.config import (
     load_config,
 )
 from capstone_motor.heartbeat_publisher import HeartbeatPublisher
-from capstone_motor.motor_driver import MotorHardwareController
+from capstone_motor.motor_driver import build_motor_controller
 from capstone_motor.services import MotorCommandService
 from capstone_motor.state_store import RuntimeStateStore
 
@@ -31,15 +32,16 @@ def setup_logger(level_name: str) -> logging.Logger:
     return logging.getLogger("capstone_motor")
 
 
-def build_app(config_path: str = "config.yml") -> MotorComponentApp:
-    raw_config = load_config(config_path)
+def build_app(config_path: str | None = None) -> MotorComponentApp:
+    resolved_config_path = config_path or os.getenv("MOTOR_CONFIG_PATH", "config.yml")
+    raw_config = load_config(resolved_config_path)
     component_config = build_motor_component_config(raw_config)
     logger = setup_logger(component_config.logging_level)
 
     zmq_context = zmq.asyncio.Context()
     state_store = RuntimeStateStore()
 
-    motor_controller = MotorHardwareController(logger=logger)
+    motor_controller = build_motor_controller(component_config.driver, logger=logger)
     command_service = MotorCommandService(
         state_store=state_store,
         motor_controller=motor_controller,
@@ -54,6 +56,7 @@ def build_app(config_path: str = "config.yml") -> MotorComponentApp:
         component_config=component_config,
         state_store=state_store,
         pub_opt=build_heartbeat_pub_options(component_config, context=zmq_context),
+        refresh_status=command_service.refresh_status_from_hardware,
         logger=logger,
     )
 
@@ -65,7 +68,7 @@ def build_app(config_path: str = "config.yml") -> MotorComponentApp:
     )
 
 
-def main(config_path: str = "config.yml") -> None:
+def main(config_path: str | None = None) -> None:
     app = build_app(config_path)
     asyncio.run(app.run())
 

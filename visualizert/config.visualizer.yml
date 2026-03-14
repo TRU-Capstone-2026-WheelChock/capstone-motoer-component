@@ -1,0 +1,23 @@
+component:
+  id: motor-visualizer
+  name: motor
+
+logging:
+  level: DEBUG
+
+driver:
+  kind: mock
+  motion_duration_sec: 5.0
+  initial_status: FOLDED
+
+command:
+  endpoint: "tcp://0.0.0.0:5557"
+  topics:
+    - ""
+  is_bind: true
+
+heartbeat:
+  endpoint: "tcp://heartbeat-monitor:5555"
+  topic: ""
+  is_connect: true
+  interval_sec: 1.0

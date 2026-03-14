@@ -1,0 +1,38 @@
+name: capstone-motor-dev
+
+x-dev-base: &dev-base
+  build:
+    context: .
+    dockerfile: Dockerfile.dev
+    args:
+      USERNAME: dev
+      UID: 1000
+      GID: 1000
+  environment: &common-env
+    MOTOR_CONFIG_PATH: ${MOTOR_CONFIG_PATH:-/app/config/config.yml}
+    PYTHONPATH: /app/src
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+  volumes:
+    - .:/app:cached
+    - poetry-venv:/app/.venv
+
+x-runtime-base: &runtime-base
+  build:
+    context: .
+    dockerfile: Dockerfile
+  environment: *common-env
+  extra_hosts:
+    - "host.docker.internal:host-gateway"
+
+services:
+  app:
+    <<: *dev-base
+    command: sleep infinity
+
+  motor:
+    <<: *runtime-base
+    command: python -m capstone_motor.main
+
+volumes:
+  poetry-venv:

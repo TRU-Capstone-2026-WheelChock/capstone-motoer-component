@@ -1,0 +1,68 @@
+name: capstone-motor-visualizert
+
+services:
+  heartbeat-monitor:
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+      args:
+        USERNAME: dev
+        UID: 1000
+        GID: 1000
+    environment:
+      PYTHONPATH: /app/src
+    volumes:
+      - ..:/app:cached
+      - visualizert-poetry-venv:/app/.venv
+    command:
+      - poetry
+      - run
+      - python
+      - visualizert/heartbeat_monitor.py
+      - --endpoint
+      - tcp://0.0.0.0:5555
+      - --bind
+
+  order-terminal:
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+      args:
+        USERNAME: dev
+        UID: 1000
+        GID: 1000
+    environment:
+      PYTHONPATH: /app/src
+    volumes:
+      - ..:/app:cached
+      - visualizert-poetry-venv:/app/.venv
+    command:
+      - sleep
+      - infinity
+
+  motor:
+    build:
+      context: ..
+      dockerfile: Dockerfile.dev
+      args:
+        USERNAME: dev
+        UID: 1000
+        GID: 1000
+    depends_on:
+      - heartbeat-monitor
+      - order-terminal
+    environment:
+      PYTHONPATH: /app/src
+      MOTOR_CONFIG_PATH: /app/visualizert/config.visualizer.yml
+    volumes:
+      - ..:/app:cached
+      - visualizert-poetry-venv:/app/.venv
+    command:
+      - poetry
+      - run
+      - python
+      - -m
+      - capstone_motor.main
+
+volumes:
+  visualizert-poetry-venv:

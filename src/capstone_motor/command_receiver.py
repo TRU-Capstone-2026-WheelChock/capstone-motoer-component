@@ -20,6 +20,12 @@ class MotorCommandReceiver:
         self.logger = logger or logging.getLogger(__name__)
 
     async def handle_message(self, message: msg_handler.MotorMessage) -> None:
+        self.logger.info(
+            "received motor order=%s override=%s sender_id=%s",
+            message.ordered_mode,
+            message.is_override_mode,
+            message.sender_id,
+        )
         await self.command_service.process_command(message)
 
     async def run(self) -> None:

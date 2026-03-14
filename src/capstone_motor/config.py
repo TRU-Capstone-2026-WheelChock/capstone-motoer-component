@@ -25,6 +25,13 @@ class HeartbeatPublicationConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class DriverConfig:
+    kind: str = "mock"
+    motion_duration_sec: float = 5.0
+    initial_status: msg_handler.MotorState = msg_handler.MotorState.FOLDED
+
+
+@dataclass(frozen=True, slots=True)
 class MotorComponentConfig:
     component_id: str = "motor-1"
     component_name: str = "motor"
@@ -33,6 +40,7 @@ class MotorComponentConfig:
     heartbeat: HeartbeatPublicationConfig = field(
         default_factory=HeartbeatPublicationConfig
     )
+    driver: DriverConfig = field(default_factory=DriverConfig)
 
 
 def load_config(path: str = "config.yml") -> dict[str, Any]:
@@ -62,6 +70,7 @@ def build_motor_component_config(raw_config: dict[str, Any]) -> MotorComponentCo
     logging_cfg = raw_config.get("logging", {})
     command = raw_config.get("command", {})
     heartbeat = raw_config.get("heartbeat", {})
+    driver = raw_config.get("driver", {})
 
     if not isinstance(component, dict):
         raise SystemExit("component must be a mapping")
@@ -71,6 +80,8 @@ def build_motor_component_config(raw_config: dict[str, Any]) -> MotorComponentCo
         raise SystemExit("command must be a mapping")
     if not isinstance(heartbeat, dict):
         raise SystemExit("heartbeat must be a mapping")
+    if not isinstance(driver, dict):
+        raise SystemExit("driver must be a mapping")
 
     return MotorComponentConfig(
         component_id=str(component.get("id", "motor-1")),
@@ -87,6 +98,13 @@ def build_motor_component_config(raw_config: dict[str, Any]) -> MotorComponentCo
             is_connect=bool(heartbeat.get("is_connect", True)),
             interval_sec=float(heartbeat.get("interval_sec", 1.0)),
         ),
+        driver=DriverConfig(
+            kind=str(driver.get("kind", "mock")),
+            motion_duration_sec=float(driver.get("motion_duration_sec", 5.0)),
+            initial_status=msg_handler.MotorState(
+                str(driver.get("initial_status", msg_handler.MotorState.FOLDED))
+            ),
+        ),
     )
 
 
@@ -99,7 +117,7 @@ def build_command_sub_options(
         endpoint=config.command.endpoint,
         topics=config.command.topics,
         is_bind=config.command.is_bind,
-        expected_type=msg_handler.ExpectedMessageType.MOTOR,
+        expected_type="auto",
         context=context,
     )
 
