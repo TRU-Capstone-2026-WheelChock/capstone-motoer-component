@@ -1,0 +1,23 @@
+component:
+  id: motor-dev-001
+  name: motor
+
+logging:
+  level: DEBUG
+
+driver:
+  kind: mock
+  motion_duration_sec: 5.0
+  initial_status: FOLDED
+
+command:
+  endpoint: "tcp://center:5557"
+  topics:
+    - ""
+  is_bind: false
+
+heartbeat:
+  endpoint: "tcp://center:5555"
+  topic: ""
+  is_connect: true
+  interval_sec: 1.0
