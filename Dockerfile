@@ -8,13 +8,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=false \
     PYTHONPATH=/app/src \
-    MOTOR_CONFIG_PATH=/app/config/config.yml
+    MOTOR_CONFIG_PATH=/app/config/config.yml \
+    BLINKA_FORCEBOARD=RASPBERRY_PI_4B \
+    BLINKA_FORCECHIP=BCM2XXX
 
 RUN apt-get update && apt-get install -y --no-install-recommends git gcc python3-dev \
  && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --no-cache-dir RPi.GPIO
-RUN pip install --no-cache-dir poetry
+RUN pip install --no-cache-dir RPi.GPIO smbus2 poetry
 
 COPY pyproject.toml poetry.lock* ./
 RUN --mount=type=cache,target=/root/.cache/pypoetry \

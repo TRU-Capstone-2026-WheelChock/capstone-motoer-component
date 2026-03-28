@@ -4,6 +4,7 @@ import asyncio
 import logging
 
 import msg_handler
+import time
 from capstone_motor.motors import Robot
 
 from capstone_motor.config import DriverConfig
@@ -33,16 +34,18 @@ class MotorHardwareController:
         raise ValueError(f"Unsupported motor order: {ordered_mode}")
 
     async def deploy(self) -> msg_handler.MotorState:
-        raise NotImplementedError("Add direct deploy control code here.")
         self.deploy = 1
-        self.robot.deploy(deploy)
+        self.robot.deploy(self.deploy)
         time.sleep(1)
+        # raise NotImplementedError("Add direct deploy control code here.")
+        
 
     async def fold(self) -> msg_handler.MotorState:
-        raise NotImplementedError("Add direct fold control code here.")
         self.deploy = -1
-        self.robot.deploy(deploy)
+        self.robot.deploy(self.deploy)
         time.sleep(1)
+        # raise NotImplementedError("Add direct fold control code here.")
+        
 
     async def read_status(self) -> msg_handler.MotorState:
         raise NotImplementedError("Add direct motor status read code here.")

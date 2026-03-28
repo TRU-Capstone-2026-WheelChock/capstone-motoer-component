@@ -116,9 +116,9 @@ class Robot:
           GPIO.cleanup()
           
      def deploy(self, deploy=1):
-          self.step_motor1.rotate_degress(45, deploy)
+          self.step_motor1.rotate_degress(270, deploy)
           time.sleep(1)
-          self.step_motor2.rotate_degress(50, deploy)
+          self.step_motor2.rotate_degress(45, deploy)
 
 if __name__ == "__main__":
      print("Try to test motor control classes...")
