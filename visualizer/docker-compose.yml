@@ -1,4 +1,4 @@
-name: capstone-motor-visualizert
+name: capstone-motor-visualizer
 
 services:
   heartbeat-monitor:
@@ -13,12 +13,12 @@ services:
       PYTHONPATH: /app/src
     volumes:
       - ..:/app:cached
-      - visualizert-poetry-venv:/app/.venv
+      - visualizer-poetry-venv:/app/.venv
     command:
       - poetry
       - run
       - python
-      - visualizert/heartbeat_monitor.py
+      - visualizer/heartbeat_monitor.py
       - --endpoint
       - tcp://0.0.0.0:5555
       - --bind
@@ -35,7 +35,7 @@ services:
       PYTHONPATH: /app/src
     volumes:
       - ..:/app:cached
-      - visualizert-poetry-venv:/app/.venv
+      - visualizer-poetry-venv:/app/.venv
     command:
       - sleep
       - infinity
@@ -53,10 +53,10 @@ services:
       - order-terminal
     environment:
       PYTHONPATH: /app/src
-      MOTOR_CONFIG_PATH: /app/visualizert/config.visualizer.yml
+      MOTOR_CONFIG_PATH: /app/visualizer/config.visualizer.yml
     volumes:
       - ..:/app:cached
-      - visualizert-poetry-venv:/app/.venv
+      - visualizer-poetry-venv:/app/.venv
     command:
       - poetry
       - run
@@ -65,4 +65,4 @@ services:
       - capstone_motor.main
 
 volumes:
-  visualizert-poetry-venv:
+  visualizer-poetry-venv:

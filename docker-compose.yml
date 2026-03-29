@@ -26,8 +26,9 @@ x-runtime-base: &runtime-base
     - "host.docker.internal:host-gateway"
 
 services:
-  app:
+  motor-dev:
     <<: *dev-base
+    profiles: ["dev"]
     command: sleep infinity
 
   motor:

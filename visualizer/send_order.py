@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--sender-id",
-        default="visualizert-order-sender",
+        default="visualizer-order-sender",
         help="sender_id used in the outbound MotorMessage.",
     )
     parser.add_argument(

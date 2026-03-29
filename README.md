@@ -1,4 +1,4 @@
-# capstone-motoer-component
+# capstone-motor-component
 
 Motor component for receiving motor orders from `capstone-center` and sending
 heartbeat messages back.
@@ -7,7 +7,7 @@ The current repository focuses on:
 
 - a component skeleton with clear class boundaries
 - a `mock` motor driver for local development
-- Docker-based local verification tools under `visualizert/`
+- Docker-based local verification tools under `visualizer/`
 
 ## Overview
 
@@ -42,7 +42,7 @@ For local testing, the mock controller simulates motion over time:
   - motor controller implementations, including `MockMotorController`
 - `config/config.yml`
   - normal container config
-- `visualizert/`
+- `visualizer/`
   - local test tools for heartbeat viewing and order injection
 
 ## Config
@@ -100,7 +100,7 @@ The easiest local check is the visualizer stack.
 Start it from the repository root:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml up --build
+docker compose -f visualizer/docker-compose.yml up --build
 ```
 
 This starts:
@@ -117,22 +117,22 @@ This starts:
 In another terminal, send `DEPLOYING`:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml exec order-terminal \
-  poetry run python visualizert/send_order.py --order DEPLOYING
+docker compose -f visualizer/docker-compose.yml exec order-terminal \
+  poetry run python visualizer/send_order.py --order DEPLOYING
 ```
 
 Then send `FOLDING` while the motor is still moving:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml exec order-terminal \
-  poetry run python visualizert/send_order.py --order FOLDING
+docker compose -f visualizer/docker-compose.yml exec order-terminal \
+  poetry run python visualizer/send_order.py --order FOLDING
 ```
 
 You can also send override mode:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml exec order-terminal \
-  poetry run python visualizert/send_order.py --order FOLDING --override
+docker compose -f visualizer/docker-compose.yml exec order-terminal \
+  poetry run python visualizer/send_order.py --order FOLDING --override
 ```
 
 ## Watch Logs
@@ -140,7 +140,7 @@ docker compose -f visualizert/docker-compose.yml exec order-terminal \
 To follow both motor-side logs and heartbeat output:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml logs -f motor heartbeat-monitor
+docker compose -f visualizer/docker-compose.yml logs -f motor heartbeat-monitor
 ```
 
 Useful things to look for:
@@ -156,20 +156,20 @@ If you changed config or the visualizer scripts but behavior still looks old,
 recreate the containers:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml up -d --force-recreate \
+docker compose -f visualizer/docker-compose.yml up -d --force-recreate \
   motor heartbeat-monitor order-terminal
 ```
 
 This matters especially after editing:
 
-- `visualizert/config.visualizer.yml`
-- `visualizert/send_order.py`
+- `visualizer/config.visualizer.yml`
+- `visualizer/send_order.py`
 - `src/capstone_motor/command_receiver.py`
 
 If you only want to stop the local stack:
 
 ```bash
-docker compose -f visualizert/docker-compose.yml down
+docker compose -f visualizer/docker-compose.yml down
 ```
 
 ## Raspberry Pi Deployment Note
