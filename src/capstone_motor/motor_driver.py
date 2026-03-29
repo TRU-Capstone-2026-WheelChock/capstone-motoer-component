@@ -18,7 +18,7 @@ class MotorHardwareController:
         self.step_1=[17,18,27,22]
         self.step_2=[23,24,25,16]
         self.robot = Robot(self.step_1, self.step_2)
-        self.deploy = 1
+        self.deploy_direction = 1
 
     async def initialize(self) -> None:
         """Reserve GPIO, serial, CAN, or any other hardware resources here."""
@@ -34,15 +34,15 @@ class MotorHardwareController:
         raise ValueError(f"Unsupported motor order: {ordered_mode}")
 
     async def deploy(self) -> msg_handler.MotorState:
-        self.deploy = 1
-        self.robot.deploy(self.deploy)
+        self.deploy_direction = 1
+        self.robot.deploy(self.deploy_direction)
         time.sleep(1)
         # raise NotImplementedError("Add direct deploy control code here.")
         
 
     async def fold(self) -> msg_handler.MotorState:
-        self.deploy = -1
-        self.robot.deploy(self.deploy)
+        self.deploy_direction = -1
+        self.robot.deploy(self.deploy_direction)
         time.sleep(1)
         # raise NotImplementedError("Add direct fold control code here.")
         
