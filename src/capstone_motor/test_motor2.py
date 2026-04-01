@@ -3,10 +3,10 @@ import time
 from motors import Robot
 
 # 定义第二个电机的引脚
-pins1 = [17,18,27,22]
-pins2 = [23,24,25,16]
+pins2 = [17,18,27,22]
+pins1 = [23,24,25,16]
 robot = Robot(pins1, pins2)
-delay = 0.002
+deploy_direction = -1
 
 # 步进序列（与你的代码一致）
 # seq = [
@@ -39,9 +39,13 @@ delay = 0.002
 #         step_once(direction)
 
 try:
-    print("Testing motor1: forward 90 degrees...")
-    # rotate(1024, direction=1)
-    robot.step_motor2.rotate_degress(60, 1)
+    if deploy_direction == 1:
+        print('Deploying')
+        robot.deploy(deploy_direction)
+    else:
+        print('Retracting')
+        robot.deploy(deploy_direction)
+    
     print("Done.")
 except KeyboardInterrupt:
     print("Interrupted")
