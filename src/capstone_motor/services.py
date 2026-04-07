@@ -23,7 +23,10 @@ class MotorCommandService:
         await self.state_store.record_received_command(message)
 
         try:
-            applied_status = await self.motor_controller.apply_order(message.ordered_mode)
+            applied_status = await self.motor_controller.apply_order(
+                ordered_mode=message.ordered_mode,
+                is_override=message.is_override_mode
+                )
         except Exception:
             await self.state_store.mark_error()
             raise

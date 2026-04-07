@@ -1,12 +1,10 @@
-import RPi.GPIO as GPIO
+import lgpio
 import time
 
-GPIO.setmode(GPIO.BCM)
+chip = lgpio.gpiochip_open(4)  # 或 0
 pins = [23,24,25,16]
-for pin in pins:
-    GPIO.setup(pin, GPIO.IN)
 
 while True:
-    states = [GPIO.input(p) for p in pins]
+    states = [lgpio.gpio_read(chip, pin) for pin in pins]
     print(states)
     time.sleep(0.1)

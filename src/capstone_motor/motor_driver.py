@@ -17,7 +17,7 @@ class MotorHardwareController:
         self.step_1=[17,18,27,22]
         self.step_2=[23,24,25,16]
         self.robot: Robot | None = None
-        self.deploy_direction = 1
+        self._lock = asyncio.Lock()
         self._status: msg_handler.MotorState = msg_handler.MotorState.STARTING
 
     async def initialize(self) -> None:
@@ -28,43 +28,124 @@ class MotorHardwareController:
     async def apply_order(
         self,
         ordered_mode: msg_handler.MotorState,
+        is_override: bool = False,
     ) -> msg_handler.MotorState:
-        if ordered_mode == msg_handler.MotorState.DEPLOYING:
-            return await self.deploy()
-        if ordered_mode == msg_handler.MotorState.FOLDING:
-            return await self.fold()
-        raise ValueError(f"Unsupported motor order: {ordered_mode}")
+        async with self._lock:
+            if ordered_mode == msg_handler.MotorState.DEPLOYING and self._status == msg_handler.MotorState.DEPLOYED:
+                self.logger.info("Already DEPLOYED, ignoring DEPLOYING order")
+                return self._status
+            if ordered_mode == msg_handler.MotorState.FOLDING and self._status == msg_handler.MotorState.FOLDED:
+                self.logger.info("Already FOLDED, ignoring FOLDING order")
+                return self._status
+            if self._status in (msg_handler.MotorState.DEPLOYING, msg_handler.MotorState.FOLDING):
+                opposite_mode = None
+                if self._status == msg_handler.MotorState.DEPLOYING:
+                    opposite_mode = msg_handler.MotorState.FOLDING
+                elif self._status == msg_handler.MotorState.FOLDING:
+                    opposite_mode = msg_handler.MotorState.DEPLOYING
 
-    async def deploy(self) -> msg_handler.MotorState:
+                if is_override and opposite_mode is not None and opposite_mode == ordered_mode:
+                    self.logger.info(
+                            "Override: reversing direction from %s to %s",
+                            self._status, ordered_mode
+                        )
+                    await self._stop_current_motion()
+                    return await self._start_motion(ordered_mode)
+                else:
+                    self.logger.warning(
+                        "Motor is already moving (%s), ignoring new order: %s (override=%s)",
+                        self._status, ordered_mode, is_override
+                    )
+                    return self._status
+            if is_override:
+                self.logger.info("Override: Ignore all orders")
+                return None
+            else:
+                await self._start_motion(ordered_mode)
+    
+    async def _stop_current_motion(self) -> None:
+        """Cancel the current motion task and stop hardware immediately."""
+        if self._current_motion_task is not None and not self._current_motion_task.done():
+            self.logger.info("Cancelling current motion task")
+            self._current_motion_task.cancel()
+            try:
+                await self._current_motion_task
+            except asyncio.CancelledError:
+                self.logger.info("Motion task cancelled successfully")
+            except Exception as e:
+                self.logger.error("Error during task cancellation: %s", e)
+            finally:
+                self._current_motion_task = None
+
+        if self.robot is not None:
+            self.robot.stop_all()
+            self.logger.debug("Stopped all motors")
+    
+    async def _start_motion(self, target_mode: msg_handler.MotorState) -> msg_handler.MotorState:
+        """Start a motion task and wait for it to complete."""
+        if target_mode == msg_handler.MotorState.DEPLOYING:
+            motion_coro = self._deploy()
+        elif target_mode == msg_handler.MotorState.FOLDING:
+            motion_coro = self._fold()
+        else:
+            raise ValueError(f"Invalid target mode: {target_mode}")
+
+        self._current_motion_task = asyncio.create_task(motion_coro)
+        try:
+            await self._current_motion_task
+        except asyncio.CancelledError:
+            self.logger.info("Motion task cancelled")
+            raise
+        finally:
+            self._current_motion_task = None
+        return self._status
+                
+    async def _deploy(self) -> None:
         if self.robot is None:
-            raise RuntimeError("motor hardware not initialized")
-        self.logger.info("deploy Order Received! @ Deploy")
-        self.deploy_direction = 1
+            raise RuntimeError("Motor hardware not initialized")
+        self.logger.info("Starting deployment")
         self._status = msg_handler.MotorState.DEPLOYING
-        await self.robot.deploy(self.deploy_direction)
-        self.logger.info("deploy Order FINISHED @ deploy, Changing State")
-        self._status = msg_handler.MotorState.DEPLOYED
-        return self._status
+        try:
+            await self.robot.deploy(1)
+            self._status = msg_handler.MotorState.DEPLOYED
+            self.logger.info("Deployment completed")
+        except asyncio.CancelledError:
+            self.logger.info("Deployment cancelled")
+            self._status = msg_handler.MotorState.FOLDED
+            raise
+        except Exception as e:
+            self.logger.error("Deployment failed: %s", e)
+            self._status = msg_handler.MotorState.FOLDED
+            raise
 
-    async def fold(self) -> msg_handler.MotorState:
+    async def _fold(self) -> None:
         if self.robot is None:
-            raise RuntimeError("motor hardware not initialized")
-        self.deploy_direction = -1
-        self.logger.info("FOLD Order Received! @ FOLD")
+            raise RuntimeError("Motor hardware not initialized")
+        self.logger.info("Starting folding")
         self._status = msg_handler.MotorState.FOLDING
-        await self.robot.deploy(self.deploy_direction)
-        self.logger.info("FOLD Order FINISHED @ FOLD")
-        self._status = msg_handler.MotorState.FOLDED
-        return self._status
+        try:
+            await self.robot.deploy(-1)  # direction=-1 为折叠
+            self._status = msg_handler.MotorState.FOLDED
+            self.logger.info("Folding completed")
+        except asyncio.CancelledError:
+            self.logger.info("Folding cancelled")
+            self._status = msg_handler.MotorState.FOLDED
+            raise
+        except Exception as e:
+            self.logger.error("Folding failed: %s", e)
+            self._status = msg_handler.MotorState.FOLDED
+            raise
 
     async def read_status(self) -> msg_handler.MotorState:
         return self._status
 
     async def stop(self) -> None:
         """Release hardware resources or stop the motor safely here."""
+        await self._stop_current_motion()
         if self.robot is not None:
             self.robot.cleanup_all()
             self.robot = None
+        self._status = msg_handler.MotorState.STARTING
 
 class MockMotorController(MotorHardwareController):
     """Mock motor controller for local development.
@@ -101,6 +182,7 @@ class MockMotorController(MotorHardwareController):
     async def apply_order(
         self,
         ordered_mode: msg_handler.MotorState,
+        is_override: bool = False,
     ) -> msg_handler.MotorState:
         if ordered_mode not in {
             msg_handler.MotorState.DEPLOYING,

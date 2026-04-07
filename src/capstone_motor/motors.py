@@ -18,6 +18,7 @@ class Step_Motor:
           [1,0,0,0],
           [1,1,0,0],
           [0,1,0,0],
+          [0,1,1,0],
           [0,0,1,0],
           [0,0,1,1],
           [0,0,0,1]
@@ -27,8 +28,6 @@ class Step_Motor:
           self.pins = [pin1, pin2, pin3, pin4]
           self.delay = delay
           self.chip = chip
-          
-          
           
           for pin in self.pins:
                GPIO.gpio_claim_output(self.chip, pin, 0)
@@ -121,7 +120,11 @@ class Robot:
           self.step_motor1.cleanup()
           self.step_motor2.cleanup()
           GPIO.gpiochip_close(chip)
-          
+     
+     def stop_all(self):
+          self.step_motor1.stop()
+          self.step_motor2.stop()
+     
      async def deploy(self, direction=1):
           if direction == 1:
                print("Deploying")
@@ -134,8 +137,12 @@ class Robot:
                await self.step_motor1.rotate_degress(230, -direction)
                await asyncio.sleep(1)
                await self.step_motor2.rotate_degress(45, direction)
+               
+     async def read_pin(self):
+          states1 = [GPIO.gpio_read(chip, pin) for pin in self.step_motor1.pins]
+          states2 = [GPIO.gpio_read(chip, pin) for pin in self.step_motor2.pins]
+          print(f'{states1} {states2}')
           
-
 async def _main() -> None:
      print("Try to test motor control classes...")
      step_pins1 = [17,18,27,22]

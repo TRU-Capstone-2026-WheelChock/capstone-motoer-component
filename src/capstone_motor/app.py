@@ -46,7 +46,7 @@ class MotorComponentApp:
                     name="motor-init-retry",
                 )
         finally:
-            await self.motor_controller.stop()
+            await self.motor_controller.robot.cleanup_all()
 
     async def _initialize_with_retry(
         self,
