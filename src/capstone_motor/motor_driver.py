@@ -38,9 +38,11 @@ class MotorHardwareController:
     async def deploy(self) -> msg_handler.MotorState:
         if self.robot is None:
             raise RuntimeError("motor hardware not initialized")
+        self.logger.info("deploy Order Received! @ Deploy")
         self.deploy_direction = 1
         self._status = msg_handler.MotorState.DEPLOYING
         await self.robot.deploy(self.deploy_direction)
+        self.logger.info("deploy Order FINISHED @ deploy, Changing State")
         self._status = msg_handler.MotorState.DEPLOYED
         return self._status
 
@@ -48,8 +50,10 @@ class MotorHardwareController:
         if self.robot is None:
             raise RuntimeError("motor hardware not initialized")
         self.deploy_direction = -1
+        self.logger.info("FOLD Order Received! @ FOLD")
         self._status = msg_handler.MotorState.FOLDING
         await self.robot.deploy(self.deploy_direction)
+        self.logger.info("FOLD Order FINISHED @ FOLD")
         self._status = msg_handler.MotorState.FOLDED
         return self._status
 
