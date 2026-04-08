@@ -130,11 +130,11 @@ class Robot:
                print("Deploying")
                await self.step_motor2.rotate_degress(45, direction)
                await asyncio.sleep(1)
-               await self.step_motor1.rotate_degress(230, -direction)
+               await self.step_motor1.rotate_degress(220, -direction)
 
           else:
                print("Retracting")
-               await self.step_motor1.rotate_degress(230, -direction)
+               await self.step_motor1.rotate_degress(220, -direction)
                await asyncio.sleep(1)
                await self.step_motor2.rotate_degress(45, direction)
                

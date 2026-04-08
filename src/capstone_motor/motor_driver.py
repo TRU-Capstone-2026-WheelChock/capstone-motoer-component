@@ -19,7 +19,9 @@ class MotorHardwareController:
         self.robot: Robot | None = None
         self._lock = asyncio.Lock()
         self._status: msg_handler.MotorState = msg_handler.MotorState.STARTING
-
+        self._current_motion_task: asyncio.Task | None = None
+        self._override_ignore = False
+        
     async def initialize(self) -> None:
         """Reserve GPIO, serial, CAN, or any other hardware resources here."""
         self.robot = Robot(self.step_1, self.step_2)
@@ -31,6 +33,10 @@ class MotorHardwareController:
         is_override: bool = False,
     ) -> msg_handler.MotorState:
         async with self._lock:
+            if self._override_ignore:
+                self.logger.info("Override active, ignoring order: %s", ordered_mode)
+                return self._status
+            
             if ordered_mode == msg_handler.MotorState.DEPLOYING and self._status == msg_handler.MotorState.DEPLOYED:
                 self.logger.info("Already DEPLOYED, ignoring DEPLOYING order")
                 return self._status
@@ -50,7 +56,10 @@ class MotorHardwareController:
                             self._status, ordered_mode
                         )
                     await self._stop_current_motion()
-                    return await self._start_motion(ordered_mode)
+                    result = await self._start_motion(ordered_mode)
+                    self._override_ignore = True
+                    self.logger.info("Override reversal completed, ignoring future commands until cleared")
+                    return result
                 else:
                     self.logger.warning(
                         "Motor is already moving (%s), ignoring new order: %s (override=%s)",
